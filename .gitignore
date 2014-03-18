@@ -6,6 +6,12 @@
 *.lib
 *.a
 
+# Logs
+*.log
+*.cproject
+*.project
+*.metadata
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so
@@ -16,3 +22,9 @@
 *.exe
 *.out
 *.app
+
+# Documentation
+*.html
+*.xml
+*.pdf
+*.prefs
