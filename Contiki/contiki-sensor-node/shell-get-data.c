@@ -23,7 +23,9 @@ PROCESS_THREAD(shell_get_process, ev, data){
 
 	PROCESS_BEGIN();
 
-
+	// Here we schedule the getting of each data point...
+	// Concat them together and send the data off to teh base station in binary
+	// format
 
 	PROCESS_END();
 

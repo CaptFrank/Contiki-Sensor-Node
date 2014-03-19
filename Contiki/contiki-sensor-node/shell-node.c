@@ -100,6 +100,10 @@ PROCESS_THREAD(shell_process, ev, data)
    */
   shell_get_data_init();
 
+  // Add the lcd interface code here...
+  // We need this to communicate with the lcd application
+
+
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/

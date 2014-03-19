@@ -25,14 +25,43 @@
 #define I2C_SEND_DATA_BUFFER_SIZE		0x20
 #define I2C_RECEIVE_DATA_BUFFER_SIZE	0x20
 
+// define the hardware sensor addresses on the i2c bus.
+// we use these to address each and every device and get
+// specific data from each sensor.
+// the sensor addresses are then concatenated in an address array,
+// where they are globally accessible.
 #define LOCAL_ADDRESS					0x00
-#define LIGHT_SENSOR_ADDRESS			0x00
-#define HUMIDITY_SENSOR_ADDRESS			0x00
-#define TEMPERATURE_SENSOR_ADDRESS		0x00
-#define PRESSURE_SENSOR_ADDRESS			0x00
-#define ALTITUDE_SENSOR_ADDRESS			0x00
-#define BATTERY_SENSOR_ADDRESS			0x00
 
+// TSL2561
+//	- ambient light
+//	- IR light
+// The address pin is put to ground
+#define LIGHT_SENSOR_ADDRESS			0x39
+
+// HIH6130
+//	- temperature
+//	- humidity
+// The
+#define HUMIDITY_SENSOR_ADDRESS			0x27
+
+// These parameters are measured by 1 sensor
+// BMP180
+//	- temperature
+//	- pressure
+//	- altitude
+#define TEMPERATURE_SENSOR_ADDRESS		0x77
+#define PRESSURE_SENSOR_ADDRESS			TEMPERATURE_SENSOR_ADDRESS
+#define ALTITUDE_SENSOR_ADDRESS			TEMPERATURE_SENSOR_ADDRESS
+
+// Buffer eeprom address
+// AT24C32D - 32Kbits
+#define BUFFER_EEPROM_ADDRESS			0xA0
+
+// This is done by the on board adc
+#define ONBOARD_TEMPERATURE				0x01
+#define BATTERY_SENSOR_ADDRESS			0x01
+
+// global list of sensor addresses.
 const unsigned char device_addresses[7] = {
 										LOCAL_ADDRESS,
 										LIGHT_SENSOR_ADDRESS,
@@ -43,10 +72,11 @@ const unsigned char device_addresses[7] = {
 										BATTERY_SENSOR_ADDRESS
 										};
 
+// compiler warning, where the sensor addresses cannot be 0x00.
 #if (LIGHT_SENSOR_ADDRESS == 0x00) || (HUMIDITY_SENSOR_ADDRESS == 0x00) || \
 	(TEMPERATURE_SENSOR_ADDRESS == 0x00) || (PRESSURE_SENSOR_ADDRESS == 0x00) || \
-	(ALTITUDE_SENSOR_ADDRESS == 0x00) || (BATTERY_SENSOR_ADDRESS)
-#	warning "Device addresses need to be implemented"
+	(ALTITUDE_SENSOR_ADDRESS == 0x00) || (BATTERY_SENSOR_ADDRESS == 0x00) || \
+	(BUFFER_EEPROM_ADDRESS == 0x00) || (ONBOARD_TEMPERATURE == 0x00)
+	#warning "Device addresses need to be implemented"
 #endif
-
 #endif
