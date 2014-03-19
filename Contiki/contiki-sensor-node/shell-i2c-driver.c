@@ -17,7 +17,7 @@ void init_i2c_bus(void){
 	i2cSetLocalDeviceAddr(LOCAL_ADDRESS);
 
 	// We register the I2C receiver service
-	i2cSetSlaveReceiveHandler(handle_i2c_request);
+	i2cSetSlaveReceiveHandler(handle_i2c_read);
 
 	// We register the I2C transmitter service
 	i2cSetSlaveTransmitHandler(handle_i2c_transmit);
@@ -26,7 +26,7 @@ void init_i2c_bus(void){
 	return;
 }
 
-void handle_i2c_request(uint8_t receive_data_length, uint8_t* receive_data){
+void handle_i2c_read(uint8_t receive_data_length, uint8_t* receive_data){
 
 	uint8_t i;
 

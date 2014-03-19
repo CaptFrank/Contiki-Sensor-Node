@@ -33,9 +33,9 @@
 
 /**
  * \file
- *         Contiki shell example
+ *         Contiki sensor shell example
  * \author
- *         Fredrik Osterlind <fros@sics.se>
+ *         Francis Papineau
  */
 
 #include "contiki.h"
