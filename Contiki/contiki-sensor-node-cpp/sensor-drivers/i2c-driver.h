@@ -13,76 +13,173 @@
 #include "i2c-conf.h"
 #include "i2c.h"
 
+/**
+ * This is the i2c packet type structure definition.
+ * We use this packet structure to receive or transmit packets
+ * on the i2c bus.
+ */
 typedef struct i2c_packet {
 
+	/**
+	 * The received and transmit buffer definitions. This could be
+	 * either:
+	 * 	- rx bound
+	 * 	- tx bound
+	 */
 	union {
+
 		uint8_t rx_buffer[I2C_RECEIVE_DATA_BUFFER_SIZE];
 		uint8_t tx_buffer[I2C_SEND_DATA_BUFFER_SIZE];
-	}buffer;
 
+	}buffer; // The useful struct address.
+
+	/**
+	 * The receive and transmit length definitions. This could be
+	 * either:
+	 * 	- rx packet length
+	 * 	- tx packet length
+	 */
 	union {
 		uint8_t rx_length;
 		uint8_t tx_length;
-	}length;
 
+	}length; // The useful length data.
+
+	/**
+	 * This is the received address or transmit address container.
+	 * It could contain either:
+	 * 	- transmit address
+	 * 	- received address
+	 */
 	union {
+
 		uint8_t transmit_address;
 		uint8_t received_address;
-	}address;
 
+	}address; // useful address pointer.
+
+	/**
+	 * This is the valid flag.
+	 */
 	uint8_t valid_packet;
 };
 
+/**
+ * This is the valid check enum
+ */
+enum valid_t{
+	VALID,
+	INVALID
+};
 
+/**
+ * This is the base class for the i2c drivers. We use this base class to design
+ * the necessary functions pertaining to the sensor that we want to interface with.
+ * It provides a standard functionality to each and everyone of the sensors.
+ */
 class i2c_driver {
 
+	// Public context
 	public:
+
+		/**
+		 * This is the default constructor for the base class.
+		 */
 		i2c_driver();
 
+		/**
+		 * These methods have to be implemented in the child class.
+		 * It provides a standard init method.
+		 */
 		virtual void begin();
+
+		//! Variation of the init method.
 		virtual void begin(uint8_t address);
 
+	// Private context
 	private:
 
-		buffer_struct buffer;
+		/**
+		 * We define the internal buffer type needed.
+		 */
+		i2c_packet buffer;
 
-		virtual ~i2c_driver();
+		/**
+		 * This is the valid container.
+		 */
+		valid_t valid;
 
-		char readInt(char address, int &value);
-			// read an signed int (16 bits) from a BMP180 register
-			// address: BMP180 register address
-			// value: external signed int for returned value (16 bits)
-			// returns 1 for success, 0 for fail, with result in value
+		/**
+		 * This is the deconstructor for the class.
+		 */
+		~i2c_driver();
 
-		char readUInt(char address, unsigned int &value);
-			// read an unsigned int (16 bits) from a BMP180 register
-			// address: BMP180 register address
-			// value: external unsigned int for returned value (16 bits)
-			// returns 1 for success, 0 for fail, with result in value
+		// -- Reading methods
 
-		char readBytes(unsigned char *values, char length);
-			// read a number of bytes from a BMP180 register
-			// values: array of char with register address in first location [0]
-			// length: number of bytes to read back
-			// returns 1 for success, 0 for fail, with read bytes in values[] array
+		/**
+		 * This method reads one byte from the i2c pipe.
+		 *
+		 * @param buffer				- the i2c packet buffer struct pointer
+		 * @return pointer				- the i2c_packet pointer of data
+		 */
+		i2c_packet* read_byte(i2c_packet* buffer);
 
-		char writeBytes(unsigned char *values, char length);
-			// write a number of bytes to a BMP180 register (and consecutive subsequent registers)
-			// values: array of char with register address in first location [0]
-			// length: number of bytes to write
-			// returns 1 for success, 0 for fail
+		/**
+		 * This method reads many bytes from the i2c pipe.
+		 *
+		 * @param buffer				- the i2c packet buffer struct pointer
+		 * @return pointer				- the i2c_packet pointer of data
+		 */
+		i2c_packet* read_byte(i2c_packet* buffer);
 
-		char writeUInt(unsigned char address, unsigned int value);
-			// Write an unsigned integer (16 bits) to a TSL2561 address (low byte first)
-			// Address: TSL2561 address (0 to 15), low byte first
-			// Value: unsigned int to write to address
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() above)
+		/**
+		 * This method reads an integer from the i2c pipe.
+		 *
+		 * @param buffer				- the i2c packet buffer struct pointer
+		 * @return pointer				- the i2c_packet pointer of data
+		 */
+		i2c_packet* read_int(i2c_packet* buffer);
 
-		char i2c_driver::readByte(unsigned char address, unsigned char &value);
 
-		char i2c_driver::writeByte(unsigned char address, unsigned char value);
+		/**
+		 * This method reads an unsigned integer from the i2c pipe.
+		 *
+		 * @param buffer				- the i2c packet buffer struct pointer
+		 * @return pointer				- the i2c_packet pointer of data
+		 */
+		i2c_packet* read_uint(i2c_packet* buffer);
 
+		// -- Writing methods
+
+		/**
+		 * This method writes one byte on the i2c pipe.
+		 *
+		 * @param buffer				- the i2c packet buffer struct pointer
+		 */
+		void write_byte(i2c_packet* buffer);
+
+		/**
+		 * This method writes many bytes on the i2c pipe.
+		 *
+		 * @param buffer				- the i2c packet buffer struct pointer
+		 */
+		void write_byte(i2c_packet* buffer);
+
+		/**
+		 * This method writes an unsigned integer from the i2c pipe.
+		 *
+		 * @param buffer				- the i2c packet buffer struct pointer
+		 * @return pointer				- the i2c_packet pointer of data
+		 */
+		void write_uint(i2c_packet* buffer);
+
+		/**
+		 * This method writes an integer from the i2c pipe.
+		 *
+		 * @param buffer				- the i2c packet buffer struct pointer
+		 * @return pointer				- the i2c_packet pointer of data
+		 */
+		void write_int(i2c_packet* buffer);
 };
 
 #endif /* I2CDRIVER_H_ */

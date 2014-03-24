@@ -39,7 +39,7 @@ char TSL2561::begin(char i2c_address)
 {
 	_i2c_address = i2c_address;
 
-	// Star the i2c bus
+	// Star the i2c bus.
 	i2cSendStart();
 	i2cWaitForComplete();
 

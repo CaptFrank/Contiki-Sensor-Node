@@ -11,14 +11,6 @@ i2c_driver::i2c_driver() {
 
 }
 
-i2c_driver::i2c_driver() {
-
-}
-
-i2c_driver::i2c_driver() {
-
-}
-
 char i2c_driver::readInt(char address, int &value)
 // Read a signed integer (two bytes) from device
 // address: register to start reading (plus subsequent register)

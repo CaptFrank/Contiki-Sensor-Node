@@ -82,7 +82,4 @@ const unsigned char device_addresses[8] = {
 	(BUFFER_EEPROM_ADDRESS == 0x00) || (ONBOARD_TEMPERATURE == 0x00)
 	#warning "Device addresses need to be implemented"
 #endif
-
-typedef bool boolean;
-typedef uint8_t byte;
 #endif
