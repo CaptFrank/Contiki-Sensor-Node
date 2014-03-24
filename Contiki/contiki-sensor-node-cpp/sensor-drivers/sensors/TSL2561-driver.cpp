@@ -1,21 +1,53 @@
 /*
- * TSL2561.h
- *
- *  Created on: 2014-03-18
- *      Author: francispapineau
- */
+	TSL2561 illumination sensor library for Arduino
+	Mike Grusin, SparkFun Electronics
+	
+	This library provides functions to access the TAOS TSL2561
+	Illumination Sensor.
+	
+	Our example code uses the "beerware" license. You can do anything
+	you like with this code. No really, anything. If you find it useful,
+	buy me a beer someday.
 
-#include "TSL2561-driver.h"
+	version 1.0 2013/09/20 MDG initial version
+*/
 
-boolean begin(void)
-	// Initialize TSL2561 library with default address (0x39)
-	// Always returns true
+#include <TSL2561-driver.h>
+
+TSL2561::TSL2561(void)
+	// TSL2561 object
 {
-	return(begin(TSL2561_ADDR));
+	this->_i2c_address = LIGHT_SENSOR_ADDRESS;
+	this->_error = 0;
 }
 
 
-boolean setPowerUp(void)
+char TSL2561::begin(void)
+	// Initialize TSL2561 library with default address (0x39)
+	// Always returns true
+{
+	return(begin(LIGHT_SENSOR_ADDRESS));
+}
+
+
+char TSL2561::begin(char i2c_address)
+	// Initialize TSL2561 library to arbitrary address or:
+	// TSL2561_ADDR_0 (0x29 address with '0' shorted on board)
+	// TSL2561_ADDR   (0x39 default address)
+	// TSL2561_ADDR_1 (0x49 address with '1' shorted on board)
+	// Always returns true
+{
+	_i2c_address = i2c_address;
+
+	// Star the i2c bus
+	i2cSendStart();
+	i2cWaitForComplete();
+
+	return(true);
+}
+
+
+char TSL2561::setPowerUp(void)
 	// Turn on TSL2561, begin integrations
 	// Returns true (1) if successful, false (0) if there was an I2C error
 	// (Also see getError() below)
@@ -25,7 +57,7 @@ boolean setPowerUp(void)
 }
 
 
-boolean setPowerDown(void)
+char TSL2561::setPowerDown(void)
 	// Turn off TSL2561
 	// Returns true (1) if successful, false (0) if there was an I2C error
 	// (Also see getError() below)
@@ -35,7 +67,7 @@ boolean setPowerDown(void)
 }
 
 
-boolean setTiming(boolean gain, unsigned char time)
+char TSL2561::setTiming(char gain, unsigned char time)
 	// If gain = false (0), device is set to low gain (1X)
 	// If gain = high (1), device is set to high gain (16X)
 	// If time = 0, integration will be 13.7ms
@@ -68,7 +100,7 @@ boolean setTiming(boolean gain, unsigned char time)
 }
 
 
-boolean setTiming(boolean gain, unsigned char time, unsigned int &ms)
+char TSL2561::setTiming(char gain, unsigned char time, unsigned int &ms)
 	// If gain = false (0), device is set to low gain (1X)
 	// If gain = high (1), device is set to high gain (16X)
 	// If time = 0, integration will be 13.7ms
@@ -92,7 +124,7 @@ boolean setTiming(boolean gain, unsigned char time, unsigned int &ms)
 }
 
 
-boolean manualStart(void)
+char TSL2561::manualStart(void)
 	// Starts a manual integration period
 	// After running this command, you must manually stop integration with manualStop()
 	// Internally sets integration time to 3 for manual integration (gain is unchanged)
@@ -100,7 +132,7 @@ boolean manualStart(void)
 	// (Also see getError() below)
 {
 	unsigned char timing;
-
+	
 	// Get timing byte
 	if (readByte(TSL2561_REG_TIMING,timing))
 	{
@@ -121,13 +153,13 @@ boolean manualStart(void)
 }
 
 
-boolean manualStop(void)
+char TSL2561::manualStop(void)
 	// Stops a manual integration period
 	// Returns true (1) if successful, false (0) if there was an I2C error
 	// (Also see getError() below)
 {
 	unsigned char timing;
-
+	
 	// Get timing byte
 	if (readByte(TSL2561_REG_TIMING,timing))
 	{
@@ -142,21 +174,21 @@ boolean manualStop(void)
 }
 
 
-boolean getData(unsigned int &data0, unsigned int &data1)
+char TSL2561::getData(unsigned int &data0, unsigned int &data1)
 	// Retrieve raw integration results
 	// data0 and data1 will be set to integration results
 	// Returns true (1) if successful, false (0) if there was an I2C error
 	// (Also see getError() below)
 {
 	// Get data0 and data1 out of result registers
-	if (readUInt(TSL2561_REG_DATA_0,data0) && readUInt(TSL2561_REG_DATA_1,data1))
+	if (readUInt(TSL2561_REG_DATA_0,data0) && readUInt(TSL2561_REG_DATA_1,data1)) 
 		return(true);
 
 	return(false);
 }
 
 
-boolean getLux(unsigned char gain, unsigned int ms, unsigned int CH0, unsigned int CH1, double &lux)
+char TSL2561::getLux(unsigned char gain, unsigned int ms, unsigned int CH0, unsigned int CH1, double &lux)
 	// Convert raw data to lux
 	// gain: 0 (1X) or 1 (16X), see setTiming()
 	// ms: integration time in ms, from setTiming() or from manual integration
@@ -193,7 +225,7 @@ boolean getLux(unsigned char gain, unsigned int ms, unsigned int CH0, unsigned i
 	}
 
 	// Determine lux per datasheet equations:
-
+	
 	if (ratio < 0.5)
 	{
 		lux = 0.0304 * d0 - 0.062 * d0 * pow(ratio,1.4);
@@ -224,7 +256,7 @@ boolean getLux(unsigned char gain, unsigned int ms, unsigned int CH0, unsigned i
 }
 
 
-boolean setInterruptControl(unsigned char control, unsigned char persist)
+char TSL2561::setInterruptControl(unsigned char control, unsigned char persist)
 	// Sets up interrupt operations
 	// If control = 0, interrupt output disabled
 	// If control = 1, use level interrupt, see setInterruptThreshold()
@@ -237,12 +269,12 @@ boolean setInterruptControl(unsigned char control, unsigned char persist)
 	// Place control and persist bits into proper location in interrupt control register
 	if (writeByte(TSL2561_REG_INTCTL,((control | 0B00000011) << 4) & (persist | 0B00001111)))
 		return(true);
-
+		
 	return(false);
 }
 
 
-boolean setInterruptThreshold(unsigned int low, unsigned int high)
+char TSL2561::setInterruptThreshold(unsigned int low, unsigned int high)
 	// Set interrupt thresholds (channel 0 only)
 	// low, high: 16-bit threshold values
 	// Returns true (1) if successful, false (0) if there was an I2C error
@@ -251,12 +283,12 @@ boolean setInterruptThreshold(unsigned int low, unsigned int high)
 	// Write low and high threshold values
 	if (writeUInt(TSL2561_REG_THRESH_L,low) && writeUInt(TSL2561_REG_THRESH_H,high))
 		return(true);
-
+		
 	return(false);
 }
 
 
-boolean clearInterrupt(void)
+char TSL2561::clearInterrupt(void)
 	// Clears an active interrupt
 	// Returns true (1) if successful, false (0) if there was an I2C error
 	// (Also see getError() below)
@@ -272,7 +304,7 @@ boolean clearInterrupt(void)
 }
 
 
-boolean getID(unsigned char &ID)
+char TSL2561::getID(unsigned char &ID)
 	// Retrieves part and revision code from TSL2561
 	// Sets ID to part ID (see datasheet)
 	// Returns true (1) if successful, false (0) if there was an I2C error
@@ -286,9 +318,9 @@ boolean getID(unsigned char &ID)
 }
 
 
-byte getError(void)
+byte TSL2561::getError(void)
 	// If any library command fails, you can retrieve an extended
-	// error code using this command. Errors are from the wire library:
+	// error code using this command. Errors are from the wire library: 
 	// 0 = Success
 	// 1 = Data too long to fit in transmit buffer
 	// 2 = Received NACK on transmit of address
@@ -298,96 +330,3 @@ byte getError(void)
 	return(_error);
 }
 
-// Private functions:
-
-boolean readByte(unsigned char address, unsigned char &value)
-	// Reads a byte from a TSL2561 address
-	// Address: TSL2561 address (0 to 15)
-	// Value will be set to stored byte
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() above)
-{
-	// Set up command byte for read
-	Wire.beginTransmission(_i2c_address);
-	Wire.write((address & 0x0F) | TSL2561_CMD);
-	_error = Wire.endTransmission();
-
-	// Read requested byte
-	if (_error == 0)
-	{
-		Wire.requestFrom(_i2c_address,1);
-		if (Wire.available() == 1)
-		{
-			value = Wire.read();
-			return(true);
-		}
-	}
-	return(false);
-}
-
-
-boolean writeByte(unsigned char address, unsigned char value)
-	// Write a byte to a TSL2561 address
-	// Address: TSL2561 address (0 to 15)
-	// Value: byte to write to address
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() above)
-{
-	// Set up command byte for write
-	Wire.beginTransmission(_i2c_address);
-	Wire.write((address & 0x0F) | TSL2561_CMD);
-	// Write byte
-	Wire.write(value);
-	_error = Wire.endTransmission();
-	if (_error == 0)
-		return(true);
-
-	return(false);
-}
-
-
-boolean readUInt(unsigned char address, unsigned int &value)
-	// Reads an unsigned integer (16 bits) from a TSL2561 address (low byte first)
-	// Address: TSL2561 address (0 to 15), low byte first
-	// Value will be set to stored unsigned integer
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() above)
-{
-	char high, low;
-
-	// Set up command byte for read
-	Wire.beginTransmission(_i2c_address);
-	Wire.write((address & 0x0F) | TSL2561_CMD);
-	_error = Wire.endTransmission();
-
-	// Read two bytes (low and high)
-	if (_error == 0)
-	{
-		Wire.requestFrom(_i2c_address,2);
-		if (Wire.available() == 2)
-		{
-			low = Wire.read();
-			high = Wire.read();
-			// Combine bytes into unsigned int
-			value = word(high,low);
-			return(true);
-		}
-	}
-	return(false);
-}
-
-
-byte writeUInt(unsigned char address, unsigned int value)
-	// Write an unsigned integer (16 bits) to a TSL2561 address (low byte first)
-	// Address: TSL2561 address (0 to 15), low byte first
-	// Value: unsigned int to write to address
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() above)
-{
-	// Split int into lower and upper bytes, write each byte
-	if (writeByte(address,lowByte(value))
-		&& writeByte(address + 1,highByte(value)))
-		return(true);
-
-	return(false);
-}

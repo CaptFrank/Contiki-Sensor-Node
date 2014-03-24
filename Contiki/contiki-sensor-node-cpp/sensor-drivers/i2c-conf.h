@@ -61,15 +61,18 @@
 #define ONBOARD_TEMPERATURE				0x01
 #define BATTERY_SENSOR_ADDRESS			0x01
 
+#define WRITE							0xFE
+
 // global list of sensor addresses.
-const unsigned char device_addresses[7] = {
+const unsigned char device_addresses[8] = {
 										LOCAL_ADDRESS,
 										LIGHT_SENSOR_ADDRESS,
 										HUMIDITY_SENSOR_ADDRESS,
 										TEMPERATURE_SENSOR_ADDRESS,
 										PRESSURE_SENSOR_ADDRESS,
 										ALTITUDE_SENSOR_ADDRESS,
-										BATTERY_SENSOR_ADDRESS
+										BATTERY_SENSOR_ADDRESS,
+										BUFFER_EEPROM_ADDRESS
 										};
 
 // compiler warning, where the sensor addresses cannot be 0x00.
@@ -79,4 +82,7 @@ const unsigned char device_addresses[7] = {
 	(BUFFER_EEPROM_ADDRESS == 0x00) || (ONBOARD_TEMPERATURE == 0x00)
 	#warning "Device addresses need to be implemented"
 #endif
+
+typedef bool boolean;
+typedef uint8_t byte;
 #endif
