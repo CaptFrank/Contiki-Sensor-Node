@@ -32,7 +32,7 @@
 #define	TSL2561_REG_DATA_0    0x0C
 #define	TSL2561_REG_DATA_1    0x0E
 
-class TSL2561 : public i2c_driver
+class TSL2561 : public base_i2c_driver
 {
 	public:
 		TSL2561(void);
