@@ -8,7 +8,7 @@
 #include "contiki.h"
 #include "shell.h"
 
-#include "shell-i2c-driver.h"
+#include "base-i2c-driver.h"
 
 #include <stdio.h>
 

@@ -5,7 +5,7 @@
  *      Author: francispapineau
  */
 
-#include "i2c-driver.h"
+#include "base-i2c-driver.h"
 
 i2c_driver::i2c_driver() {
 
