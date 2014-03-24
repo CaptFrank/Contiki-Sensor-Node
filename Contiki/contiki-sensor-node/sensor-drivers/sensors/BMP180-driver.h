@@ -32,7 +32,7 @@
 #define	BMP180_COMMAND_PRESSURE2 0xB4
 #define	BMP180_COMMAND_PRESSURE3 0xF4
 
-class BMP180 : public i2c_driver
+class BMP180 : public base_i2c_driver
 {
 	public:
 		BMP180(); // base type

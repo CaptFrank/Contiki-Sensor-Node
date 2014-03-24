@@ -77,7 +77,7 @@ enum valid_t{
  * the necessary functions pertaining to the sensor that we want to interface with.
  * It provides a standard functionality to each and everyone of the sensors.
  */
-class i2c_driver {
+class base_i2c_driver {
 
 	// Public context
 	public:
@@ -85,7 +85,7 @@ class i2c_driver {
 		/**
 		 * This is the default constructor for the base class.
 		 */
-		i2c_driver();
+		base_i2c_driver();
 
 		/**
 		 * These methods have to be implemented in the child class.
@@ -112,7 +112,7 @@ class i2c_driver {
 		/**
 		 * This is the deconstructor for the class.
 		 */
-		~i2c_driver();
+		~base_i2c_driver();
 
 		// -- Reading methods
 

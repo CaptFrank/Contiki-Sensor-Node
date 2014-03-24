@@ -7,11 +7,11 @@
 
 #include "i2c-driver.h"
 
-i2c_driver::i2c_driver() {
+base_i2c_driver::base_i2c_driver() {
 
 }
 
-char i2c_driver::readInt(char address, int &value)
+char base_i2c_driver::readInt(char address, int &value)
 // Read a signed integer (two bytes) from device
 // address: register to start reading (plus subsequent register)
 // value: external variable to store data (function modifies value)
@@ -30,7 +30,7 @@ char i2c_driver::readInt(char address, int &value)
 }
 
 
-char i2c_driver::readUInt(char address, unsigned int &value)
+char base_i2c_driver::readUInt(char address, unsigned int &value)
 // Read an unsigned integer (two bytes) from device
 // address: register to start reading (plus subsequent register)
 // value: external variable to store data (function modifies value)
@@ -48,7 +48,7 @@ char i2c_driver::readUInt(char address, unsigned int &value)
 }
 
 
-char i2c_driver::readBytes(unsigned char *values, char length)
+char base_i2c_driver::readBytes(unsigned char *values, char length)
 // Read an array of bytes from device
 // values: external array to hold data. Put starting register in values[0].
 // length: number of bytes to read
@@ -72,7 +72,7 @@ char i2c_driver::readBytes(unsigned char *values, char length)
 }
 
 
-char i2c_driver::writeBytes(unsigned char *values, char length)
+char base_i2c_driver::writeBytes(unsigned char *values, char length)
 // Write an array of bytes to device
 // values: external array of data to write. Put starting register in values[0].
 // length: number of bytes to write
@@ -88,7 +88,7 @@ char i2c_driver::writeBytes(unsigned char *values, char length)
 		return(0);
 }
 
-char i2c_driver::writeUInt(unsigned char address, unsigned int value)
+char base_i2c_driver::writeUInt(unsigned char address, unsigned int value)
 	// Write an unsigned integer (16 bits) to a TSL2561 address (low byte first)
 	// Address: TSL2561 address (0 to 15), low byte first
 	// Value: unsigned int to write to address
@@ -103,7 +103,7 @@ char i2c_driver::writeUInt(unsigned char address, unsigned int value)
 	return(false);
 }
 
-char i2c_driver::readByte(unsigned char address, unsigned char &value)
+char base_i2c_driver::readByte(unsigned char address, unsigned char &value)
 	// Reads a byte from a TSL2561 address
 	// Address: TSL2561 address (0 to 15)
 	// Value will be set to stored byte
@@ -128,7 +128,7 @@ char i2c_driver::readByte(unsigned char address, unsigned char &value)
 	return(false);
 }
 
-char i2c_driver::writeByte(unsigned char address, unsigned char value)
+char base_i2c_driver::writeByte(unsigned char address, unsigned char value)
 	// Write a byte to a TSL2561 address
 	// Address: TSL2561 address (0 to 15)
 	// Value: byte to write to address
