@@ -16,79 +16,155 @@
 	buy me a (root) beer someday.
 */
 
-#ifndef SFE_BMP180_h
-#define SFE_BMP180_h
+#ifndef BMP180_h
+#define BMP180_h
+
+#include "Wire.h"
 
 #include "../i2c-conf.h"
 #include "../i2c-driver.h"
-#include "i2c.h"
 
-#define	BMP180_REG_CONTROL 0xF4
-#define	BMP180_REG_RESULT 0xF6
+//! Register definitions
+#define	BMP180_REG_CONTROL 				0xF4
+#define	BMP180_REG_RESULT 				0xF6
 
-#define	BMP180_COMMAND_TEMPERATURE 0x2E
-#define	BMP180_COMMAND_PRESSURE0 0x34
-#define	BMP180_COMMAND_PRESSURE1 0x74
-#define	BMP180_COMMAND_PRESSURE2 0xB4
-#define	BMP180_COMMAND_PRESSURE3 0xF4
+#define	BMP180_COMMAND_TEMPERATURE 		0x2E
+#define	BMP180_COMMAND_PRESSURE0 		0x34
+#define	BMP180_COMMAND_PRESSURE1 		0x74
+#define	BMP180_COMMAND_PRESSURE2 		0xB4
+#define	BMP180_COMMAND_PRESSURE3 		0xF4
 
+#define NONE							0x00
+
+/**
+ * This is the BMP180 driver for the system. we use these methods to get
+ * the appropriate data pieces. It extends the base i2c driver class.
+ */
 class BMP180 : public base_i2c_driver
 {
 	public:
-		BMP180(); // base type
 
-		char begin();
-			// call pressure.begin() to initialize BMP180 before use
-			// returns 1 if success, 0 if failure (bad component or I2C bus shorted?)
+		/**
+		 * The default class constructor
+		 */
+		BMP180();
+
+		/**
+		 * The default class deconstructor
+		 */
+		virtual ~BMP180();
+
+		/**
+		 * This initializes the register values in the internal class.
+		 * It returns VALID if okay and INVALID if an error occurred.
+		 *
+		 * @return valid					- the valid flag
+		 */
+		valid_t begin();
 		
-		char startTemperature(void);
-			// command BMP180 to start a temperature measurement
-			// returns (number of ms to wait) for success, 0 for fail
+		/**
+		 * This method starts the temperature conversion process by sending
+		 * a start command to the remote device.
+		 *
+		 * @return valid					- the valid flag
+		 */
+		valid_t start_temperature(void);
 
-		char getTemperature(double &T);
-			// return temperature measurement from previous startTemperature command
-			// places returned value in T variable (deg C)
-			// returns 1 for success, 0 for fail
+		/**
+		 * This method returns if the conversion and receiving of the
+		 * data was successful. The data is then contained internally.
+		 *
+		 * @return valid					- the valid flag
+		 */
+		valid_t convert_temperature();
 
-		char startPressure(char oversampling);
-			// command BMP180 to start a pressure measurement
-			// oversampling: 0 - 3 for oversampling value
-			// returns (number of ms to wait) for success, 0 for fail
+		/**
+		 * This is the access to the temperature method. It returns the
+		 * temperature from within the class.
+		 *
+		 * @return temp						- the temperature
+		 */
+		double get_temperature();
 
-		char getPressure(double &P, double &T);
-			// return absolute pressure measurement from previous startPressure command
-			// note: requires previous temperature measurement in variable T
-			// places returned value in P variable (mbar)
-			// returns 1 for success, 0 for fail
+		/**
+		 * This method sets the pressure oversampling and also starts the
+		 * pressure sampling and conversion.
+		 *
+		 * @param oversampling				- the sampling <0-3>
+		 * @return valid					- the valid flag
+		 */
+		valid_t start_pressure(uint8_t oversampling);
 
-		double sealevel(double P, double A);
-			// convert absolute pressure to sea-level pressure (as used in weather data)
-			// P: absolute pressure (mbar)
-			// A: current altitude (meters)
-			// returns sealevel pressure in mbar
+		/**
+		 * This method issues a command to the pressure sensor to convert
+		 * the pressure and send it to our internal container.
+		 *
+		 * @return valid					- the valid flag
+		 */
+		valid_t convert_pressure();
 
-		double altitude(double P, double P0);
-			// convert absolute pressure to altitude (given baseline pressure; sea-level, runway, etc.)
-			// P: absolute pressure (mbar)
-			// P0: fixed baseline pressure (mbar)
-			// returns signed altitude in meters
+		/**
+		 * This method returns the internal pressure value in mbars.
+		 *
+		 * @return pressure					- the pressure in mbars
+		 */
+		double get_pressure();
 
-		char getError(void);
-			// If any library command fails, you can retrieve an extended
-			// error code using this command. Errors are from the wire library: 
-			// 0 = Success
-			// 1 = Data too long to fit in transmit buffer
-			// 2 = Received NACK on transmit of address
-			// 3 = Received NACK on transmit of data
-			// 4 = Other error
+		/**
+		 * This calculates the absolute sea level pressure in mbars and returns it.
+		 *
+		 * @return pressure 				- the sealevel pressure in mbars
+		 */
+		double get_sealevel();
 
+
+		/**
+		 * This method calculates the altitude given a pressure baseline and
+		 * the varying pressure variable.
+		 *
+		 * @param pressure						- the varying pressure
+		 * @return altitude						- the calculated altitude in meters
+		 */
+		double get_altitude(double pressure);
+
+	//! Private Context
 	private:
 
-		// Variable definition
-		int AC1,AC2,AC3,VB1,VB2,MB,MC,MD;
-		unsigned int AC4,AC5,AC6; 
-		double c5,c6,mc,md,x0,x1,x2,y0,y1,y2,p0,p1,p2;
-		char _error;
+		//! Variable definition
+		int AC1 = 0, AC2 = 0, AC3 = 0, VB1 = 0, \
+			VB2 = 0, MB = 0, MC = 0, MD = 0;
+
+		unsigned int AC4 = 0, AC5 = 0, AC6 = 0;
+
+		double c5 = 0, c6 = 0, mc = 0, md = 0, x0 = 0,\
+			   x1 = 0, x2 = 0, y0 = 0, y1 = 0, y2 = 0,\
+			   p0 = 0, p1 = 0, p2 = 0;
+
+		//! The internal address
+		const uint8_t _address = PRESSURE_SENSOR_ADDRESS;
+
+		//! Baseline pressure
+		double _baseline_pressure;
+
+		//! Delay container
+		uint8_t _delay;
+
+		//! Temperature container
+		double _temperature;
+
+		//! Pressure container
+		double _pressure;
+
+		//! Altitude container
+		double _altitude;
+
+		/**
+		 * This is the coherence check for the altimeter on boot up.
+		 * It checks the register access and returns if it can.
+		 *
+		 * @return vlaid						- if the registers are accessible
+		 */
+		bool check_registers();
 };
 
 #endif

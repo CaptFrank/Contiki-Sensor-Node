@@ -10,7 +10,7 @@
 
 #include <list.h>
 
-#include "../base-i2c-service.h"
+#include "base-i2c-service.h"
 
 /**
  * This is the final packet.
