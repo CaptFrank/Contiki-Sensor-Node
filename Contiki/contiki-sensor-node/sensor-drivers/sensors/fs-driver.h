@@ -8,6 +8,9 @@
 #ifndef FS_DRIVER_H_
 #define FS_DRIVER_H_
 
+#define FILESYSTEN_SIGNATURE		"::fs-ver-0x01::"
+#define FILE_HANDLE_HEADER			"::file::"
+
 /**
  * The file system integrity.
  */
