@@ -6,7 +6,12 @@
 /**
  * This is the default constructor for the class.
  */
-DS1307::DS1307(){}
+DS1307::DS1307(){
+
+	//! Init the internal variables
+	this->_ctrl = 0x00;
+	this->_address = 0x00;
+}
 
 /**
  * This is the overriden begin method found in the base i2c driver
@@ -30,34 +35,57 @@ bool DS1307::begin(uint8_t address){
 /**
  * This method starts the clock ticks.
  */
-void start_clock(void){
+void DS1307::start_clock(void){
+
+	//! Create a read command
+	uint8_t data1[] = {0x00};
 
 	//! Create the transmit request
+	read_request_t* req1 = set_rx_request(RTC_ADDRESS, data1, sizeof(data1), 1);
+
+	//! We read the second byte
+	i2c_packet* packet = read_bytes(req1);
+	this->_time.second = packet->buffer[0] & 0x7F;
+
+	//! Create a write command
+	uint8_t data2[] = {0x00, (uint8_t) this->_time.second};
 
 
+	//! Create the transmit request
+	write_request_t* req2 = set_tx_request(RTC_ADDRESS, data2, sizeof(data2));
 
-  Wire.beginTransmission(DS1307_ID);
-  Wire.write((uint8_t)0x00);                      // Register 0x00 holds the oscillator start/stop bit
-  Wire.endTransmission();
-  Wire.requestFrom(DS1307_ID, 1);
-  second = Wire.read() & 0x7f;       // save actual seconds and AND sec with bit 7 (sart/stop bit) = clock started
-  Wire.beginTransmission(DS1307_ID);
-  Wire.write((uint8_t)0x00);
-  Wire.write((uint8_t)second);                    // write seconds back and start the clock
-  Wire.endTransmission();
+	//! Check if valid
+	if(this->write_bytes(req2) != VALID){
+		this->_error = true;
+	}
 }
 
-void DS1307::stopClock(void)         // set the ClockHalt bit high to stop the rtc
-{
-  Wire.beginTransmission(DS1307_ID);
-  Wire.write((uint8_t)0x00);                      // Register 0x00 holds the oscillator start/stop bit
-  Wire.endTransmission();
-  Wire.requestFrom(DS1307_ID, 1);
-  second = Wire.read() | 0x80;       // save actual seconds and OR sec with bit 7 (sart/stop bit) = clock stopped
-  Wire.beginTransmission(DS1307_ID);
-  Wire.write((uint8_t)0x00);
-  Wire.write((uint8_t)second);                    // write seconds back and stop the clock
-  Wire.endTransmission();
+/**
+ * This method stops the clock ticks
+ */
+void DS1307::stop_clock(void){
+
+	//! Create a read command
+	uint8_t data1[] = {0x00};
+
+	//! Create the transmit request
+	read_request_t* req1 = set_rx_request(RTC_ADDRESS, data1, sizeof(data1), 1);
+
+	//! We read the second byte
+	i2c_packet* packet = read_bytes(req1);
+	this->_time.second = packet->buffer[0] | 0x80;
+
+	//! Create a write command
+	uint8_t data2[] = {0x00, (uint8_t) this->_time.second};
+
+
+	//! Create the transmit request
+	write_request_t* req2 = set_tx_request(RTC_ADDRESS, data2, sizeof(data2));
+
+	//! Check if valid
+	if(this->write_bytes(req2) != VALID){
+		this->_error = true;
+	}
 }
 
 /**
@@ -69,10 +97,10 @@ void DS1307::get_time(void){
 	uint8_t data[1] = {0x00};
 
 	//! Create a read request
-	read_request_t req = set_rx_request(RTC_ADDRESS, data, sizeof(data), 0x07);
+	read_request_t* req = set_rx_request(RTC_ADDRESS, data, sizeof(data), 0x07);
 
 	//! We send th read request
-	i2c_packet* time = this->read_bytes(&req);
+	i2c_packet* time = this->read_bytes(req);
 
 	if(time->valid_packet){
 
@@ -111,10 +139,10 @@ void DS1307::set_time(void){
 					  dec2bcd(this->_time.year - 2000)};
 
 	//! Create the write request
-	write_request_t req = set_tx_request(RTC_ADDRESS, data, sizeof(data));
+	write_request_t* req = set_tx_request(RTC_ADDRESS, data, sizeof(data));
 
 	//! We send it off
-	if(this->write_bytes(&req) != VALID){
+	if(this->write_bytes(req) != VALID){
 		this->_error = true;
 	}
 }
@@ -129,10 +157,10 @@ i2c_packet* DS1307::get_CTRL(void){
 	data[0] = (0x07);
 
 	//! Create read request
-	read_request_t req = set_rx_request(RTC_ADDRESS, data, sizeof(data), sizeof(data));
+	read_request_t* req = set_rx_request(RTC_ADDRESS, data, sizeof(data), sizeof(data));
 
 	//! Send the read request
-	i2c_packet* i2c_packet_returned = this->read_bytes(&req);
+	i2c_packet* i2c_packet_returned = this->read_bytes(req);
 
 	//! Set internal value
 	this->_ctrl = i2c_packet_returned->buffer[0];
@@ -149,10 +177,10 @@ void DS1307::set_CTRL(void){
 	uint8_t data[2] = {0x07, this->_ctrl};
 
 	//! Create a write request
-	write_request_t req = set_tx_request(RTC_ADDRESS, data, sizeof(data));
+	write_request_t* req = set_tx_request(RTC_ADDRESS, data, sizeof(data));
 
 	//! We send the packet
-	if(this->write_bytes(&req) != VALID){
+	if(this->write_bytes(req) != VALID){
 		this->_error = true;
 	}
 }
@@ -170,10 +198,10 @@ i2c_packet* DS1307::get_RAM(uint8_t rtc_addr, uint8_t rtc_quantity){
 	data[0] = (rtc_addr & 63) + 8;
 
 	//! Create read request
-	read_request_t req = set_rx_request(RTC_ADDRESS, data, sizeof(data), rtc_quantity);
+	read_request_t* req = set_rx_request(RTC_ADDRESS, data, sizeof(data), rtc_quantity);
 
 	//! Send the read request
-	return this->read_bytes(&req);
+	return this->read_bytes(req);
 }
 
 /**
@@ -188,13 +216,13 @@ void DS1307::set_RAM(uint8_t rtc_addr, uint8_t* rtc_ram, uint8_t rtc_quantity){
 	//! Create the data
 	uint8_t data[rtc_quantity + 1];
 	data[0] = (rtc_addr & 63) + 8;
-	memcpy((void*)data, (void*)rtc_ram, rtc_quantity);
+	memcpy((void*)data[1], (void*)rtc_ram, rtc_quantity);
 
 	//! Create a write request
-	write_request_t req = set_tx_request(RTC_ADDRESS, data, sizeof(data));
+	write_request_t* req = set_tx_request(RTC_ADDRESS, data, sizeof(data));
 
 	//! Send out the
-	if(this->write_bytes(&req) != VALID){
+	if(this->write_bytes(req) != VALID){
 		this->_error = true;
 	}
 }

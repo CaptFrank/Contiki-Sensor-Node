@@ -1,26 +1,10 @@
-/*
-	SFE_TSL2561 illumination sensor library for Arduino
-	Mike Grusin, SparkFun Electronics
-	
-	This library provides functions to access the TAOS TSL2561
-	Illumination Sensor.
-	
-	Our example code uses the "beerware" license. You can do anything
-	you like with this code. No really, anything. If you find it useful,
-	buy me a beer someday.
 
-	version 1.0 2013/09/20 MDG initial version
-*/
+#ifndef TSL2561_h
+#define TSL2561_h
 
-#ifndef SFE_TSL2561_h
-#define SFE_TSL2561_h
-
-#include "../i2c-conf.h"
 #include "../i2c-driver.h"
-#include "i2c.h"
 
-// TSL2561 registers
-
+//! Definition of the TSL2561 registers
 #define TSL2561_CMD           0x80
 #define TSL2561_CMD_CLEAR     0xC0
 #define	TSL2561_REG_CONTROL   0x00
@@ -32,24 +16,38 @@
 #define	TSL2561_REG_DATA_0    0x0C
 #define	TSL2561_REG_DATA_1    0x0E
 
-class TSL2561 : public base_i2c_driver
-{
-	public:
-		TSL2561(void);
-			// SFE_TSL2561 object
-			
-		char begin(void);
-			// Initialize TSL2561 library with default address (0x39)
-			// Always returns true
+/**
+ * This is the light sensor handler driver. It handles the
+ * communication between the light sensor and the cpu. The
+ * data processing and acquisition is done through this class.
+ *
+ * This class extends the base i2c driver class.
+ */
+class TSL2561 : public base_i2c_driver {
 
-		char begin(char i2c_address);
-			// Initialize TSL2561 library to arbitrary address or:
-			// TSL2561_ADDR_0 (0x29 address with '0' shorted on board)
-			// TSL2561_ADDR   (0x39 default address)
-			// TSL2561_ADDR_1 (0x49 address with '1' shorted on board)
-			// Always returns true
-		
-		char setPowerUp(void);
+	// Public context
+	public:
+
+	/**
+	 * This is the default constructor for the class
+	 */
+	TSL2561(void);
+			
+	/**
+	 * This is the virtual default deconstructor for the class.
+	 */
+	virtual ~TSL2561(void);
+
+	/**
+	 * This is the initializer method for the i2c communication for the
+	 * remote device.
+	 *
+	 * @return true									- the install status
+	 */
+	bool begin();
+
+
+	char setPowerUp(void);
 			// Turn on TSL2561, begin integration
 			// Returns true (1) if successful, false (0) if there was an I2C error
 			// (Also see getError() below)
@@ -135,18 +133,13 @@ class TSL2561 : public base_i2c_driver
 			// Returns true (1) if successful, false (0) if there was an I2C error
 			// (Also see getError() below)
 			
-		byte getError(void);
-			// If any library command fails, you can retrieve an extended
-			// error code using this command. Errors are from the wire library: 
-			// 0 = Success
-			// 1 = Data too long to fit in transmit buffer
-			// 2 = Received NACK on transmit of address
-			// 3 = Received NACK on transmit of data
-			// 4 = Other error
+	// Private context
+	private:
 
-		// Variable definition
-		char _i2c_address;
-		byte _error;
+	/**
+	 * This is the remote device address
+	 */
+	char _address;
 };
 
 #endif

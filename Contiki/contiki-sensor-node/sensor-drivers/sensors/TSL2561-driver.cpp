@@ -14,36 +14,29 @@
 
 #include <TSL2561-driver.h>
 
-TSL2561::TSL2561(void)
-	// TSL2561 object
-{
-	this->_i2c_address = LIGHT_SENSOR_ADDRESS;
+/**
+ * This is the default constructor for the class
+ */
+TSL2561::TSL2561(void){
+
+	//! Set the internal values
+	this->_address = LIGHT_SENSOR_ADDRESS;
 	this->_error = 0;
 }
 
+/**
+ * This is the initializer method for the i2c communication for the
+ * remote device.
+ *
+ * @return true									- the install status
+ */
+bool TSL2561::begin(){
 
-char TSL2561::begin(void)
-	// Initialize TSL2561 library with default address (0x39)
-	// Always returns true
-{
-	return(begin(LIGHT_SENSOR_ADDRESS));
-}
-
-
-char TSL2561::begin(char i2c_address)
-	// Initialize TSL2561 library to arbitrary address or:
-	// TSL2561_ADDR_0 (0x29 address with '0' shorted on board)
-	// TSL2561_ADDR   (0x39 default address)
-	// TSL2561_ADDR_1 (0x49 address with '1' shorted on board)
-	// Always returns true
-{
-	_i2c_address = i2c_address;
-
-	// Star the i2c bus.
-	i2cSendStart();
-	i2cWaitForComplete();
-
-	return(true);
+	//! We check presence
+	if(check_presence(this->_address)){
+		return true;
+	}
+	return false;
 }
 
 
@@ -316,17 +309,3 @@ char TSL2561::getID(unsigned char &ID)
 
 	return(false);
 }
-
-
-byte TSL2561::getError(void)
-	// If any library command fails, you can retrieve an extended
-	// error code using this command. Errors are from the wire library: 
-	// 0 = Success
-	// 1 = Data too long to fit in transmit buffer
-	// 2 = Received NACK on transmit of address
-	// 3 = Received NACK on transmit of data
-	// 4 = Other error
-{
-	return(_error);
-}
-

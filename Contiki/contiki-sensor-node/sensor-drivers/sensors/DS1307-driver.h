@@ -22,7 +22,7 @@
 #include <i2c-driver.h>
 
 /**
- * This is teh time structure which holds the current time
+ * This is the time structure which holds the current time
  * data from the RTC.
  */
 typedef struct time_t {
