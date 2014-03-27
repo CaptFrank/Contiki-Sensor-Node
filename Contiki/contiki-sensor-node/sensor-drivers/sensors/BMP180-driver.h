@@ -19,8 +19,6 @@
 #ifndef BMP180_h
 #define BMP180_h
 
-#include "Wire.h"
-
 #include "../i2c-conf.h"
 #include "../i2c-driver.h"
 

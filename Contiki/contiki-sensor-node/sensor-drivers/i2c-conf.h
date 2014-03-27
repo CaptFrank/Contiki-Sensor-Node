@@ -57,6 +57,10 @@
 // AT24C32D - 32Kbits
 #define BUFFER_EEPROM_ADDRESS			0xA0
 
+// The RTC
+// DS1307
+#define RTC_ADDRESS						0x68
+
 // This is done by the on board adc
 #define ONBOARD_TEMPERATURE				0x01
 #define BATTERY_SENSOR_ADDRESS			0x01

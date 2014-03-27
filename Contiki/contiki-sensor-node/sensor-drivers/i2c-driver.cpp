@@ -68,6 +68,28 @@ write_request_t* base_i2c_driver::set_tx_request(uint8_t address, uint8_t* data,
 	return this->tx_request;
 }
 
+/**
+ * This method checks if the device is present
+ *
+ * @param target_address		- the remote address
+ * @return bool					- presence
+ */
+bool check_presence(uint8_t target_address){
+
+	//! Start the transmission
+	i2c_start(target_address, I2C_WRITE);
+
+	//! We write an ACK
+	i2c_write(0x00);
+
+	//! We read the response
+	if(i2c_read_ack()){
+		return true;
+	}
+	return false;
+
+}
+
 // -- Reading methods
 
 /**
@@ -124,7 +146,7 @@ i2c_packet* base_i2c_driver::read_bytes(struct read_request_t* read_req){
  */
 i2c_packet* base_i2c_driver::read_byte(struct read_request_t* read_req){
 
-	read_req->target_read_length = 0x01;
+	read_req->target_read_length = sizeof(uint8_t);
 
 	//! Get the data
 	return this->read_bytes(read_req);
@@ -143,7 +165,7 @@ int base_i2c_driver::read_int(struct read_request_t* read_req){
 	i2c_packet* temp;
 
 	//! Set the length
-	read_req->target_read_length = 0x02;
+	read_req->target_read_length = sizeof(int);
 
 	//! Get the data
 	temp = this->read_bytes(read_req);
@@ -170,7 +192,7 @@ int base_i2c_driver::read_uint(struct read_request_t* read_req){
 	i2c_packet* temp;
 
 	//! Set the length
-	read_req->target_read_length = 0x02;
+	read_req->target_read_length = sizeof(int);
 
 	//! Get the data
 	temp = this->read_bytes(read_req);
@@ -218,7 +240,7 @@ valid_t base_i2c_driver::write_bytes(struct write_request_t* write_req){
 valid_t base_i2c_driver::write_byte(struct write_request_t* write_req){
 
 	//! Set the length to read
-	write_req->target_data_length = 0x01;
+	write_req->target_data_length = sizeof(uint8_t);
 
 	//! Override the call
 	this->write_bytes(write_req);
@@ -234,7 +256,7 @@ valid_t base_i2c_driver::write_byte(struct write_request_t* write_req){
 valid_t base_i2c_driver::write_uint(struct write_request_t* write_req){
 
 	//! Set the length to read
-	write_req->target_data_length = 0x02;
+	write_req->target_data_length = sizeof(int);
 
 	//! Override the call
 	this->write_bytes(write_req);
@@ -251,7 +273,7 @@ valid_t base_i2c_driver::write_uint(struct write_request_t* write_req){
 valid_t base_i2c_driver::write_int(struct write_request_t* write_req){
 
 	//! Set the length to read
-	write_req->target_data_length = 0x02;
+	write_req->target_data_length = sizeof(int);
 
 	//! Override the call
 	this->write_bytes(write_req);

@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "Wire.h"
-
 /**
  * The default class constructor
  */
@@ -28,6 +26,11 @@ valid_t BMP180::begin(){
 
 	//! Variable declaration
 	double c3,c4,b1;
+
+	//! We check to see if the device is there
+	if(!check_presence(PRESSURE_SENSOR_ADDRESS)){
+		return INVALID;
+	}
 
 	//! The BMP180 includes factory calibration data stored on the device.
 	//! Each device has different numbers, these must be retrieved and
