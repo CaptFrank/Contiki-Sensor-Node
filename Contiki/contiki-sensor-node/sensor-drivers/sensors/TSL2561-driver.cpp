@@ -280,32 +280,38 @@ char TSL2561::setInterruptThreshold(unsigned int low, unsigned int high)
 	return(false);
 }
 
+/**
+ * This method clears the remote device interrupt flag.
+ *
+ * @return success						- the success in clearing the flag
+ */
+bool TSL2561::clear_interrupt(void){
 
-char TSL2561::clearInterrupt(void)
-	// Clears an active interrupt
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	// Set up command byte for interrupt clear
-	Wire.beginTransmission(_i2c_address);
-	Wire.write(TSL2561_CMD_CLEAR);
-	_error = Wire.endTransmission();
-	if (_error == 0)
-		return(true);
+	//! Set up command byte for interrupt clear
+	uint8_t data[] = {TSL2561_CMD_CLEAR};
 
-	return(false);
+	//! Create a write request
+	write_request_t* req = set_tx_request(this->_address, data, sizeof(data));
+
+	if(this->write_byte(req) != VALID){
+		return false;
+	}
+	return true;
 }
 
+/**
+ * This method gets the id of the sensor.
+ *
+ * @return i2c_packet 					- the id of the sensor
+ */
+i2c_packet* TSL2561::get_ID(){
 
-char TSL2561::getID(unsigned char &ID)
-	// Retrieves part and revision code from TSL2561
-	// Sets ID to part ID (see datasheet)
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	// Get ID byte from ID register
-	if (readByte(TSL2561_REG_ID,ID))
-		return(true);
+	//! Create the command
+	uint8_t data[] = {TSL2561_REG_ID};
 
-	return(false);
+	//! We create a read request
+	read_request_t* req = set_rx_request(this->_address, data, sizeof(data), 0x01);
+
+	//! Get ID byte from ID register
+	return this->read_byte(req);
 }

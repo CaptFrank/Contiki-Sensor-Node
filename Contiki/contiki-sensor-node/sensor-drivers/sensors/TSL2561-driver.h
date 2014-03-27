@@ -122,16 +122,19 @@ class TSL2561 : public base_i2c_driver {
 			// Returns true (1) if successful, false (0) if there was an I2C error
 			// (Also see getError() below)
 
-		char clearInterrupt(void);
-			// Clears an active interrupt
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+		/**
+		 * This method clears the remote device interrupt flag.
+		 *
+		 * @return success						- the success in clearing the flag
+		 */
+		bool clear_interrupt(void);
 
-		char getID(unsigned char &ID);
-			// Retrieves part and revision code from TSL2561
-			// Sets ID to part ID (see datasheet)
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+		/**
+		 * This method gets the id of the sensor.
+		 *
+		 * @return i2c_packet 					- the id of the sensor
+		 */
+		i2c_packet* get_ID(void);
 			
 	// Private context
 	private:
