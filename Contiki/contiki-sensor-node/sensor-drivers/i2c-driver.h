@@ -180,6 +180,14 @@ class base_i2c_driver {
 		write_request_t* set_tx_request(uint8_t address, uint8_t* data,
 										uint8_t data_length);
 
+		/**
+		 * This method checks if the device is present
+		 *
+		 * @param target_address		- the remote address
+		 * @return bool					- presence
+		 */
+		bool check_presence(uint8_t target_address);
+
 		// -- Reading methods
 
 		/**

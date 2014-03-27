@@ -68,6 +68,28 @@ write_request_t* base_i2c_driver::set_tx_request(uint8_t address, uint8_t* data,
 	return this->tx_request;
 }
 
+/**
+ * This method checks if the device is present
+ *
+ * @param target_address		- the remote address
+ * @return bool					- presence
+ */
+bool check_presence(uint8_t target_address){
+
+	//! Start the transmission
+	i2c_start(target_address, I2C_WRITE);
+
+	//! We write an ACK
+	i2c_write(0x00);
+
+	//! We read the response
+	if(i2c_read_ack()){
+		return true;
+	}
+	return false;
+
+}
+
 // -- Reading methods
 
 /**
