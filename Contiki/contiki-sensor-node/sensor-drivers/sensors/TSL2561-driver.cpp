@@ -249,16 +249,21 @@ char TSL2561::getLux(unsigned char gain, unsigned int ms, unsigned int CH0, unsi
 }
 
 
-char TSL2561::setInterruptControl(unsigned char control, unsigned char persist)
-	// Sets up interrupt operations
-	// If control = 0, interrupt output disabled
-	// If control = 1, use level interrupt, see setInterruptThreshold()
-	// If persist = 0, every integration cycle generates an interrupt
-	// If persist = 1, any value outside of threshold generates an interrupt
-	// If persist = 2 to 15, value must be outside of threshold for 2 to 15 integration cycles
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
+/**
+ * Sets up interrupt operations
+ *
+ * If control = 0, interrupt output disabled
+ * If control = 1, use level interrupt, see setInterruptThreshold()
+ * If persist = 0, every integration cycle generates an interrupt
+ * If persist = 1, any value outside of threshold generates an interrupt
+ * If persist = 2 to 15, value must be outside of threshold for 2 to 15 integration cycles
+ *
+ * @param control						- the control variable
+ * @param persist						- the persits variable
+ * @return bool							- success
+ */
+bool setInterruptControl(unsigned char control, unsigned char persist){
+
 	// Place control and persist bits into proper location in interrupt control register
 	if (writeByte(TSL2561_REG_INTCTL,((control | 0B00000011) << 4) & (persist | 0B00001111)))
 		return(true);
@@ -267,12 +272,15 @@ char TSL2561::setInterruptControl(unsigned char control, unsigned char persist)
 }
 
 
-char TSL2561::setInterruptThreshold(unsigned int low, unsigned int high)
-	// Set interrupt thresholds (channel 0 only)
-	// low, high: 16-bit threshold values
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
+/**
+ * Set interrupt thresholds (channel 0 only)
+ *
+ * @param low							- the low threshold value
+ * @param high							- the high threshold value
+ * @return bool							- the success
+ */
+bool set_interrupt_threshold(unsigned int low, unsigned int high){
+
 	// Write low and high threshold values
 	if (writeUInt(TSL2561_REG_THRESH_L,low) && writeUInt(TSL2561_REG_THRESH_H,high))
 		return(true);
