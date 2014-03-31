@@ -21,7 +21,11 @@ TSL2561::TSL2561(void){
 
 	//! Set the internal values
 	this->_address = LIGHT_SENSOR_ADDRESS;
+	this->_timing = 0;
+	this->_lux = 0;
 	this->_error = 0;
+	this->_data0 = 0;
+	this->_data1 = 0;
 }
 
 /**
@@ -39,215 +43,233 @@ bool TSL2561::begin(){
 	return false;
 }
 
+/**
+ * Turn on TSL2561, begin integration
+ */
+void TSL2561::set_power_up(void){
 
-char TSL2561::setPowerUp(void)
-	// Turn on TSL2561, begin integrations
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	// Write 0x03 to command byte (power on)
-	return(writeByte(TSL2561_REG_CONTROL,0x03));
+	//! Write 0x03 to command byte (power on)
+
+	//! Set up command byte for interrupt clear
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_CONTROL), 0x03};
+
+	//! Create a write request
+	write_request_t* req = set_tx_request(this->_address, data, sizeof(data));
+
+	if(this->write_bytes(req) != VALID){
+		this->_error = true;
+	}
+	return;
 }
 
+/**
+ * Turn off TSL2561
+ */
+void TSL2561::set_power_down(void){
 
-char TSL2561::setPowerDown(void)
-	// Turn off TSL2561
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	// Clear command byte (power off)
-	return(writeByte(TSL2561_REG_CONTROL,0x00));
+	//! Clear command byte (power off)
+	//! Set up command byte for interrupt clear
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_CONTROL), 0x00};
+
+	//! Create a write request
+	write_request_t* req = set_tx_request(this->_address, data, sizeof(data));
+
+	if(this->write_bytes(req) != VALID){
+		this->_error = true;
+	}
+	return;
 }
 
+/**
+ * This method sets the gain and the integration time
+ *
+ * If gain = false (0), device is set to low gain (1X)
+ * If gain = high (1), device is set to high gain (16X)
+ * If time = 0, integration will be 13.7ms
+ * If time = 1, integration will be 101ms
+ * If time = 2, integration will be 402ms
+ * If time = 3, use manual start / stop
+ *
+ * @param gain							- the gain
+ * @param time							- the time
+ */
+void TSL2561::set_timing(uint8_t gain, uint8_t time){
 
-char TSL2561::setTiming(char gain, unsigned char time)
-	// If gain = false (0), device is set to low gain (1X)
-	// If gain = high (1), device is set to high gain (16X)
-	// If time = 0, integration will be 13.7ms
-	// If time = 1, integration will be 101ms
-	// If time = 2, integration will be 402ms
-	// If time = 3, use manual start / stop
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	unsigned char timing;
+	//! Read the timing location
+	i2c_packet* ptr = read_timing();
 
-	// Get timing byte
-	if (readByte(TSL2561_REG_TIMING,timing))
-	{
-		// Set gain (0 or 1)
+	//! Get timing byte
+	if (ptr->valid_packet){
+
+		this->_timing = ptr->buffer[0];
+
+		//! Set gain (0 or 1)
 		if (gain)
-			timing |= 0x10;
+			this->_timing |= 0x10;
 		else
-			timing &= ~0x10;
+			this->_timing &= ~0x10;
 
-		// Set integration time (0 to 3)
-		timing &= ~0x03;
-		timing |= (time & 0x03);
+		//! Set integration time (0 to 3)
+		this->_timing &= ~0x03;
+		this->_timing |= (time & 0x03);
 
-		// Write modified timing byte back to device
-		if (writeByte(TSL2561_REG_TIMING,timing))
-			return(true);
+		//! Write the timing back
+		write_timing();
 	}
-	return(false);
+	return;
 }
 
-
-char TSL2561::setTiming(char gain, unsigned char time, unsigned int &ms)
-	// If gain = false (0), device is set to low gain (1X)
-	// If gain = high (1), device is set to high gain (16X)
-	// If time = 0, integration will be 13.7ms
-	// If time = 1, integration will be 101ms
-	// If time = 2, integration will be 402ms
-	// If time = 3, use manual start / stop (ms = 0)
-	// ms will be set to integration time
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	// Calculate ms for user
-	switch (time)
-	{
-		case 0: ms = 14; break;
-		case 1: ms = 101; break;
-		case 2: ms = 402; break;
-		default: ms = 0;
-	}
-	// Set integration using base function
-	return(setTiming(gain,time));
-}
-
-
-char TSL2561::manualStart(void)
-	// Starts a manual integration period
-	// After running this command, you must manually stop integration with manualStop()
-	// Internally sets integration time to 3 for manual integration (gain is unchanged)
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	unsigned char timing;
+/**
+ * This method starts a manual integration period.
+ *
+ * @return								- if the command was successful
+ */
+bool TSL2561::manual_start(void){
 	
-	// Get timing byte
-	if (readByte(TSL2561_REG_TIMING,timing))
-	{
-		// Set integration time to 3 (manual integration)
-		timing |= 0x03;
+	//! We read
+	i2c_packet* ptr = read_timing();
 
-		if (writeByte(TSL2561_REG_TIMING,timing))
-		{
-			// Begin manual integration
-			timing |= 0x08;
+	//! Get timing byte
+	if (ptr->valid_packet){
 
-			// Write modified timing byte back to device
-			if (writeByte(TSL2561_REG_TIMING,timing))
-				return(true);
+		//! Set integration time to 3 (manual integration)
+		this->_timing |= 0x03;
+
+		if (write_timing()){
+
+			//! Begin manual integration
+			this->_timing |= 0x08;
+
+			//! Write modified timing byte back to device
+			if (write_timing())
+				return true;
 		}
 	}
-	return(false);
+	return false;
 }
 
+/**
+ * This method stops a manual integration period.
+ *
+ * @return bool							- if the command was successful
+ */
+bool TSL2561::manual_stop(void){
 
-char TSL2561::manualStop(void)
-	// Stops a manual integration period
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	unsigned char timing;
+	//! We read
+	i2c_packet* ptr = read_timing();
 	
-	// Get timing byte
-	if (readByte(TSL2561_REG_TIMING,timing))
-	{
-		// Stop manual integration
-		timing &= ~0x08;
+	//! Get timing byte
+	if (ptr->valid_packet){
 
-		// Write modified timing byte back to device
-		if (writeByte(TSL2561_REG_TIMING,timing))
-			return(true);
+		//! Stop manual integration
+		this->_timing &= ~0x08;
+
+		//! Write modified timing byte back to device
+		if (write_timing())
+			return true;
 	}
-	return(false);
+	return false;
 }
 
+/**
+ * This method gets the raw data from the I2C bus and converts them into internal
+ * data.
+ *
+ * @return bool							- if the data acquisition was successful
+ */
+bool TSL2561::get_data(){
 
-char TSL2561::getData(unsigned int &data0, unsigned int &data1)
-	// Retrieve raw integration results
-	// data0 and data1 will be set to integration results
-	// Returns true (1) if successful, false (0) if there was an I2C error
-	// (Also see getError() below)
-{
-	// Get data0 and data1 out of result registers
-	if (readUInt(TSL2561_REG_DATA_0,data0) && readUInt(TSL2561_REG_DATA_1,data1)) 
-		return(true);
+	//! Create the command
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_DATA_0)};
 
-	return(false);
+	//! We create a read request
+	read_request_t* req = set_rx_request(this->_address, data, sizeof(data), 0x02);
+
+	//! Get ID byte from ID register
+	this->_data0 = this->read_uint(req);
+
+	if (this->_data0 <= 0){
+		this->_error = true;
+		return false;
+	}
+
+	//! Create the command
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_DATA_1)};
+
+	//! We create a read request
+	read_request_t* req = set_rx_request(this->_address, data, sizeof(data), 0x02);
+
+	//! Get ID byte from ID register
+	this->_data1 = this->read_uint(req);
+
+	if (this->_data1 <= 0){
+		this->_error = true;
+		return false;
+	}
+
+	return true;
 }
 
+/**
+ * This method converts a lux value into a double value and stores it internally.
+ *
+ * @param gain							- 0 = 1X and 1 = 16X
+ * @param ms							- the intergration time in ms
+ * @param CH0							- result from get_data()
+ * @param CH1							- result from get_data()
+ */
+void TSL2561::convert_lux(uint8_t gain, uint16_t ms, uint16_t CH0, uint16_t CH1){
 
-char TSL2561::getLux(unsigned char gain, unsigned int ms, unsigned int CH0, unsigned int CH1, double &lux)
-	// Convert raw data to lux
-	// gain: 0 (1X) or 1 (16X), see setTiming()
-	// ms: integration time in ms, from setTiming() or from manual integration
-	// CH0, CH1: results from getData()
-	// lux will be set to resulting lux calculation
-	// returns true (1) if calculation was successful
-	// RETURNS false (0) AND lux = 0.0 IF EITHER SENSOR WAS SATURATED (0XFFFF)
-{
 	double ratio, d0, d1;
 
-	// Determine if either sensor saturated (0xFFFF)
-	// If so, abandon ship (calculation will not be accurate)
-	if ((CH0 == 0xFFFF) || (CH1 == 0xFFFF))
-	{
-		lux = 0.0;
-		return(false);
+	//! Determine if either sensor saturated (0xFFFF)
+	//! If so, abandon ship (calculation will not be accurate)
+	if ((CH0 == 0xFFFF) || (CH1 == 0xFFFF)){
+
+		this->_lux = 0.0;
+		return;
 	}
 
-	// Convert from unsigned integer to floating point
+	//! Convert from unsigned integer to floating point
 	d0 = CH0; d1 = CH1;
 
-	// We will need the ratio for subsequent calculations
+	//! We will need the ratio for subsequent calculations
 	ratio = d1 / d0;
 
-	// Normalize for integration time
+	//! Normalize for integration time
 	d0 *= (402.0/ms);
 	d1 *= (402.0/ms);
 
-	// Normalize for gain
-	if (gain)
-	{
+	//! Normalize for gain
+	if (gain){
+
 		d0 /= 16;
 		d1 /= 16;
 	}
 
-	// Determine lux per datasheet equations:
-	
-	if (ratio < 0.5)
-	{
-		lux = 0.0304 * d0 - 0.062 * d0 * pow(ratio,1.4);
-		return(true);
+	//! Determine lux per datasheet equations:
+	if (ratio < 0.5){
+
+		this->_lux = 0.0304 * d0 - 0.062 * d0 * pow(ratio,1.4);
+		return;
+	}if (ratio < 0.61){
+
+		this->_lux = 0.0224 * d0 - 0.031 * d1;
+		return;
+	}if (ratio < 0.80){
+
+		this->_lux = 0.0128 * d0 - 0.0153 * d1;
+		return;
+	}if (ratio < 1.30){
+
+		this->_lux = 0.00146 * d0 - 0.00112 * d1;
+		return;
 	}
 
-	if (ratio < 0.61)
-	{
-		lux = 0.0224 * d0 - 0.031 * d1;
-		return(true);
-	}
-
-	if (ratio < 0.80)
-	{
-		lux = 0.0128 * d0 - 0.0153 * d1;
-		return(true);
-	}
-
-	if (ratio < 1.30)
-	{
-		lux = 0.00146 * d0 - 0.00112 * d1;
-		return(true);
-	}
-
-	// if (ratio > 1.30)
-	lux = 0.0;
-	return(true);
+	//! if (ratio > 1.30)
+	this->_lux = 0.0;
+	return;
 }
-
 
 /**
  * Sets up interrupt operations
@@ -262,15 +284,21 @@ char TSL2561::getLux(unsigned char gain, unsigned int ms, unsigned int CH0, unsi
  * @param persist						- the persits variable
  * @return bool							- success
  */
-bool setInterruptControl(unsigned char control, unsigned char persist){
+bool TSL2561::set_interrupt_control(unsigned char control, unsigned char persist){
 
-	// Place control and persist bits into proper location in interrupt control register
-	if (writeByte(TSL2561_REG_INTCTL,((control | 0B00000011) << 4) & (persist | 0B00001111)))
-		return(true);
+	//! Set up command byte for interrupt clear
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_INTCTL), ((control | 0B00000011) << 4) & (persist | 0B00001111)};
+
+	//! Create a write request
+	write_request_t* req = set_tx_request(this->_address, data, sizeof(data));
+
+	if(this->write_bytes(req) != VALID){
+		this->_error = true;
+		return false;
+	}
 		
-	return(false);
+	return true;
 }
-
 
 /**
  * Set interrupt thresholds (channel 0 only)
@@ -279,13 +307,30 @@ bool setInterruptControl(unsigned char control, unsigned char persist){
  * @param high							- the high threshold value
  * @return bool							- the success
  */
-bool set_interrupt_threshold(unsigned int low, unsigned int high){
+bool TSL2561::set_interrupt_threshold(unsigned int low, unsigned int high){
 
-	// Write low and high threshold values
-	if (writeUInt(TSL2561_REG_THRESH_L,low) && writeUInt(TSL2561_REG_THRESH_H,high))
-		return(true);
+	//! Set up command byte for interrupt clear
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_THRESH_L), low};
+
+	//! Create a write request
+	write_request_t* req = set_tx_request(this->_address, data, sizeof(data));
+
+	if(this->write_bytes(req) != VALID){
+		return false;
+	}
+
+	//! Set up command byte for interrupt clear
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_THRESH_H), high};
+
+	//! Create a write request
+	write_request_t* req = set_tx_request(this->_address, data, sizeof(data));
+
+	if(this->write_bytes(req) != VALID){
+		this->_error = true;
+		return false;
+	}
 		
-	return(false);
+	return true;
 }
 
 /**
@@ -296,12 +341,13 @@ bool set_interrupt_threshold(unsigned int low, unsigned int high){
 bool TSL2561::clear_interrupt(void){
 
 	//! Set up command byte for interrupt clear
-	uint8_t data[] = {TSL2561_CMD_CLEAR};
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_CMD_CLEAR)};
 
 	//! Create a write request
 	write_request_t* req = set_tx_request(this->_address, data, sizeof(data));
 
 	if(this->write_byte(req) != VALID){
+		this->_error = true;
 		return false;
 	}
 	return true;
@@ -315,11 +361,51 @@ bool TSL2561::clear_interrupt(void){
 i2c_packet* TSL2561::get_ID(){
 
 	//! Create the command
-	uint8_t data[] = {TSL2561_REG_ID};
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_ID)};
 
 	//! We create a read request
 	read_request_t* req = set_rx_request(this->_address, data, sizeof(data), 0x01);
 
 	//! Get ID byte from ID register
 	return this->read_byte(req);
+}
+
+// Private context
+
+/**
+ * This is the read_timing method that stored the timing variable internally
+ *
+ * @return bool							- the success
+ */
+i2c_packet* TSL2561::read_timing(){
+
+	//! Create the command
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_TIMING)};
+
+	//! We create a read request
+	read_request_t* req = set_rx_request(this->_address, data, sizeof(data), 0x01);
+
+	//! Get ID byte from ID register
+	return this->read_byte(req);
+
+}
+
+/**
+ * This is the writes_timing method that stored the timing variable internally
+ *
+ * @return bool							- the success
+ */
+bool TSL2561::write_timing(){
+
+	//! Set up command byte for interrupt clear
+	uint8_t data[] = {TSL2561_CMD_MACRO(TSL2561_REG_TIMING), this->_timing};
+
+	//! Create a write request
+	write_request_t* req = set_tx_request(this->_address, data, sizeof(data));
+
+	if(this->write_byte(req) != VALID){
+		this->_error = true;
+		return false;
+	}
+	return true;
 }

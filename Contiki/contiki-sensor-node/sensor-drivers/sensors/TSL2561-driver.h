@@ -16,6 +16,8 @@
 #define	TSL2561_REG_DATA_0    0x0C
 #define	TSL2561_REG_DATA_1    0x0E
 
+#define TSL2561_CMD_MACRO(x) ((x & 0x0F) | TSL2561_CMD)
+
 /**
  * This is the light sensor handler driver. It handles the
  * communication between the light sensor and the cpu. The
@@ -47,102 +49,107 @@ class TSL2561 : public base_i2c_driver {
 	bool begin();
 
 
-	char setPowerUp(void);
-			// Turn on TSL2561, begin integration
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+	/**
+	 * Turn on TSL2561, begin integration
+	 */
+	void set_power_up(void);
 
-		char setPowerDown(void);
-			// Turn off TSL2561
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+	/**
+	 * Turn off TSL2561
+	 */
+	void set_power_down(void);
 
-		char setTiming(char gain, unsigned char time);
-			// If gain = false (0), device is set to low gain (1X)
-			// If gain = high (1), device is set to high gain (16X)
-			// If time = 0, integration will be 13.7ms
-			// If time = 1, integration will be 101ms
-			// If time = 2, integration will be 402ms
-			// If time = 3, use manual start / stop
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+	/**
+	 * This method sets the gain and the integration time
+	 *
+	 * If gain = false (0), device is set to low gain (1X)
+	 * If gain = high (1), device is set to high gain (16X)
+	 * If time = 0, integration will be 13.7ms
+	 * If time = 1, integration will be 101ms
+	 * If time = 2, integration will be 402ms
+	 * If time = 3, use manual start / stop
+	 *
+	 * @param gain							- the gain
+	 * @param time							- the time
+	 */
+	void set_timing(uint8_t gain, uint8_t time);
 
-		char setTiming(char gain, unsigned char time, unsigned int &ms);
-			// Identical to above command, except ms is set to selected integration time
-			// If gain = false (0), device is set to low gain (1X)
-			// If gain = high (1), device is set to high gain (16X)
-			// If time = 0, integration will be 13.7ms
-			// If time = 1, integration will be 101ms
-			// If time = 2, integration will be 402ms
-			// If time = 3, use manual start / stop (ms = 0)
-			// ms will be set to requested integration time
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+	/**
+	 * This method starts a manual integration period.
+	 *
+	 * @return								- if the command was successful
+	 */
+	bool manual_start(void);
 
-		char manualStart(void);
-			// Starts a manual integration period
-			// After running this command, you must manually stop integration with manualStop()
-			// Internally sets integration time to 3 for manual integration (gain is unchanged)
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+	/**
+	 * This method stops a manual integration period.
+	 *
+	 * @return bool							- if the command was successful
+	 */
+	bool manual_stop(void);
 
-		char manualStop(void);
-			// Stops a manual integration period
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+	/**
+	 * This method gets the raw data from the I2C bus and converts them into internal
+	 * data.
+	 *
+	 * @return bool							- if the data acquisition was successful
+	 */
+	bool get_data();
 
-		char getData(unsigned int &CH0, unsigned int &CH1);
-			// Retrieve raw integration results
-			// data0 and data1 will be set to integration results
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-		char getLux(unsigned char gain, unsigned int ms, unsigned int CH0, unsigned int CH1, double &lux);
-			// Convert raw data to lux
-			// gain: 0 (1X) or 1 (16X), see setTiming()
-			// ms: integration time in ms, from setTiming() or from manual integration
-			// CH0, CH1: results from getData()
-			// lux will be set to resulting lux calculation
-			// returns true (1) if calculation was successful
-			// RETURNS false (0) AND lux = 0.0 IF EITHER SENSOR WAS SATURATED (0XFFFF)
+	/**
+	 * This method converts a lux value into a double value and stores it internally.
+	 *
+	 * @param gain							- 0 = 1X and 1 = 16X
+	 * @param ms							- the intergration time in ms
+	 * @param CH0							- result from get_data()
+	 * @param CH1							- result from get_data()
+	 */
+	void convert_lux(uint8_t gain, uint16_t ms, uint16_t CH0, uint16_t CH1);
 
-		/**
-		 * Sets up interrupt operations
-		 *
-		 * If control = 0, interrupt output disabled
-		 * If control = 1, use level interrupt, see setInterruptThreshold()
-		 * If persist = 0, every integration cycle generates an interrupt
-		 * If persist = 1, any value outside of threshold generates an interrupt
-		 * If persist = 2 to 15, value must be outside of threshold for 2 to 15 integration cycles
-		 *
-		 * @param control						- the control variable
-		 * @param persist						- the persits variable
-		 * @return bool							- success
-		 */
-		bool set_interrupt_control(unsigned char control, unsigned char persist);
+	/**
+	 * This is the getter method for getting the lux value stored internally
+	 *
+	 * @return double						- the lux value
+	 */
+	double get_lux();
 
-		/**
-		 * Set interrupt thresholds (channel 0 only)
-		 *
-		 * @param low							- the low threshold value
-		 * @param high							- the high threshold value
-		 * @return bool							- the success
-		 */
-		bool set_interrupt_threshold(unsigned int low, unsigned int high);
+	/**
+	 * Sets up interrupt operations
+	 *
+	 * If control = 0, interrupt output disabled
+	 * If control = 1, use level interrupt, see setInterruptThreshold()
+	 * If persist = 0, every integration cycle generates an interrupt
+	 * If persist = 1, any value outside of threshold generates an interrupt
+	 * If persist = 2 to 15, value must be outside of threshold for 2 to 15 integration cycles
+	 *
+	 * @param control						- the control variable
+	 * @param persist						- the persits variable
+	 * @return bool							- success
+	 */
+	bool set_interrupt_control(unsigned char control, unsigned char persist);
 
-		/**
-		 * This method clears the remote device interrupt flag.
-		 *
-		 * @return success						- the success in clearing the flag
-		 */
-		bool clear_interrupt(void);
+	/**
+	 * Set interrupt thresholds (channel 0 only)
+	 *
+	 * @param low							- the low threshold value
+	 * @param high							- the high threshold value
+	 * @return bool							- the success
+	 */
+	bool set_interrupt_threshold(unsigned int low, unsigned int high);
 
-		/**
-		 * This method gets the id of the sensor.
-		 *
-		 * @return i2c_packet 					- the id of the sensor
-		 */
-		i2c_packet* get_ID(void);
+	/**
+	 * This method clears the remote device interrupt flag.
+	 *
+	 * @return success						- the success in clearing the flag
+	 */
+	bool clear_interrupt(void);
+
+	/**
+	 * This method gets the id of the sensor.
+	 *
+	 * @return i2c_packet 					- the id of the sensor
+	 */
+	i2c_packet* get_ID(void);
 			
 	// Private context
 	private:
@@ -151,6 +158,35 @@ class TSL2561 : public base_i2c_driver {
 	 * This is the remote device address
 	 */
 	char _address;
+
+	/**
+	 * The data from each channel
+	 */
+	uint16_t _data1, _data0;
+
+	/**
+	 * The lux value
+	 */
+	double _lux;
+
+	/**
+	 * The internal setting
+	 */
+	uint8_t _timing;
+
+	/**
+	 * This is the read_timing method that stored the timing variable internally
+	 *
+	 * @return i2c_packet					- the packet read
+	 */
+	i2c_packet* read_timing();
+
+	/**
+	 * This is the writes_timing method that stored the timing variable internally
+	 *
+	 * @return bool							- the success
+	 */
+	bool write_timing();
 };
 
 #endif
