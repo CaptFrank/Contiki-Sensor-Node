@@ -53,10 +53,6 @@
 #define PRESSURE_SENSOR_ADDRESS			TEMPERATURE_SENSOR_ADDRESS
 #define ALTITUDE_SENSOR_ADDRESS			TEMPERATURE_SENSOR_ADDRESS
 
-// Buffer eeprom address
-// AT24C32D - 32Kbits
-#define BUFFER_EEPROM_ADDRESS			0xA0
-
 // The RTC
 // DS1307
 #define RTC_ADDRESS						0x68
@@ -68,22 +64,21 @@
 #define WRITE							0xFE
 
 // global list of sensor addresses.
-const unsigned char device_addresses[8] = {
+const unsigned char device_addresses[7] = {
 										LOCAL_ADDRESS,
 										LIGHT_SENSOR_ADDRESS,
 										HUMIDITY_SENSOR_ADDRESS,
 										TEMPERATURE_SENSOR_ADDRESS,
 										PRESSURE_SENSOR_ADDRESS,
 										ALTITUDE_SENSOR_ADDRESS,
-										BATTERY_SENSOR_ADDRESS,
-										BUFFER_EEPROM_ADDRESS
+										BATTERY_SENSOR_ADDRESS
 										};
 
 // compiler warning, where the sensor addresses cannot be 0x00.
 #if (LIGHT_SENSOR_ADDRESS == 0x00) || (HUMIDITY_SENSOR_ADDRESS == 0x00) || \
 	(TEMPERATURE_SENSOR_ADDRESS == 0x00) || (PRESSURE_SENSOR_ADDRESS == 0x00) || \
 	(ALTITUDE_SENSOR_ADDRESS == 0x00) || (BATTERY_SENSOR_ADDRESS == 0x00) || \
-	(BUFFER_EEPROM_ADDRESS == 0x00) || (ONBOARD_TEMPERATURE == 0x00)
+	(ONBOARD_TEMPERATURE == 0x00)
 	#warning "Device addresses need to be implemented"
 #endif
 #endif
