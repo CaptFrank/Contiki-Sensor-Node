@@ -8,8 +8,6 @@
 #include "contiki.h"
 #include "shell.h"
 
-#include "base-i2c-driver.h"
-
 #include <stdio.h>
 
 /*---------------------------------------------------------------------------*/
@@ -28,7 +26,7 @@ PROCESS_THREAD(shell_get_process, ev, data){
 	// format
 
 	PROCESS_END();
-
+	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
